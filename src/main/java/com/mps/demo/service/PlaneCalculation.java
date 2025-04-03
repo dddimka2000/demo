@@ -27,12 +27,9 @@ public class PlaneCalculation {
         double currentSpeed = wayPoints.get(0).getSpeed();
         TemporaryPoint firstPoint = new TemporaryPoint(currentLatitude, currentLongitude, currentAltitude, currentSpeed, 0);
         temporaryPoints.add(firstPoint);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        log.info("position= " + firstPoint);
+        log.info(firstPoint);
+        //тут должны быть сохранения в бд, но в задании в метод не передается ЛА с его идом,
+        //поэтому сохраним их при выходе из  метода
         for (int i = 1; i < wayPoints.size(); i++) {
             WayPoint start = wayPoints.get(i - 1);
             WayPoint end = wayPoints.get(i);
@@ -50,13 +47,8 @@ public class PlaneCalculation {
                 }
                 TemporaryPoint tempPoint = new TemporaryPoint(currentLatitude, currentLongitude, currentAltitude, currentSpeed, course);
                 temporaryPoints.add(tempPoint);
-                log.info("position= " + tempPoint);
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                //тут должны быть сохранения в бд тоже
+                log.info(tempPoint);
             }
         }
 
@@ -66,15 +58,27 @@ public class PlaneCalculation {
     private int calculateSteps(WayPoint start, WayPoint end, AirplaneCharacteristics characteristics) {
         double distance = calculateDistance(start, end);
         double timeToTravel = distance / Math.min(start.getSpeed(), characteristics.getMaxSpeed());
+        log.info("Distance: "+ distance+". TimeToTravel: "+timeToTravel);
         return (int) (timeToTravel);
     }
 
 
     private double calculateDistance(WayPoint start, WayPoint end) {
-        double deltaX = end.getLatitude() - start.getLatitude();
-        double deltaY = end.getLongitude() - start.getLongitude();
-        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        double earthRadius = 6371000;
+        double lat1 = Math.toRadians(start.getLatitude());
+        double lon1 = Math.toRadians(start.getLongitude());
+        double lat2 = Math.toRadians(end.getLatitude());
+        double lon2 = Math.toRadians(end.getLongitude());
+        double deltaLat = lat2 - lat1;
+        double deltaLon = lon2 - lon1;
+        double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                Math.cos(lat1) * Math.cos(lat2) *
+                        Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return earthRadius * c;
     }
+
 
     private double calculateCourse(WayPoint start, WayPoint end) {
         double deltaX = end.getLongitude() - start.getLongitude();
@@ -117,7 +121,7 @@ public class PlaneCalculation {
         flight.getPassedPoints().add(finalPosition);
         flightService.save(flight);
         airplaneService.save(airplane);
-        log.info("position= " + finalPosition);
+        log.info("Airplane id=" + airplane.getId() + ", position= " + airplane.getPosition());
 
         log.info("Flight ended for airplane with id={}", airplane.getId());
     }

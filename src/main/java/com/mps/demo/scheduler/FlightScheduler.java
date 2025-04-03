@@ -39,7 +39,7 @@ public class FlightScheduler {
         List<Thread> threads = new ArrayList<>();
         for (Airplane airplane : airplanes) {
             flightService.printPastFlightInfo(airplane);
-            List<WayPoint> wayPoints = flightGenerationService.generateRandomWayPoints(9, airplane.getCharacteristics());
+            List<WayPoint> wayPoints = flightGenerationService.generateRandomWayPoints(3, airplane.getCharacteristics());
             Flight flight = flightService.createFlight(wayPoints);
             airplane.getFlights().add(flight);
             airplaneService.save(airplane);
